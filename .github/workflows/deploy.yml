@@ -1,0 +1,62 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout your repository using git
+        uses: actions/checkout@v4   # v6 已不存在，改用 v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4 # 根据你的项目要求调整，建议与本地 pnpm 版本一致
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "2507287078@qq.com"
+          git config --global user.name "ElliotSebastian"
+
+      - name: Sync content
+        run: pnpm run sync-content
+        # 如果你需要环境变量（如 BILI_SESSDATA），在这里添加：
+        # env:
+        #   BILI_SESSDATA: ${{ secrets.BILI_SESSDATA }}
+        env:
+            CONTENT_REPO_URL: https://${{ secrets.TOKEN }}@github.com/ElliotSebastian/Blog-Content.git
+
+      - name: Build Astro site
+        run: pnpm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist   # 确保这是你的构建输出目录（Astro 默认为 dist）
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
