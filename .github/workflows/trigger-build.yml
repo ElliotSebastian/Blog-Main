@@ -1,0 +1,30 @@
+# .github/workflows/trigger-build.yml
+name: Trigger Build on Content Update
+
+on:
+  repository_dispatch:
+    # 可以自定义事件类型，与触发端发送的 type 保持一致
+    types: [content-updated]
+
+jobs:
+  sync-content:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'  # 请根据项目实际 Node 版本调整
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8  # 请根据项目实际 pnpm 版本调整
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run sync-content script
+        run: pnpm run sync-content
